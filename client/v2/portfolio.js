@@ -4,42 +4,43 @@
 // current products on the page
 let currentProducts = [];
 let currentPagination = {};
-let favorite_products = [];
-let currentSize = 12;
+let currentBrand = "all";
 
-//Selectors
-const selectShow = document.querySelector('#show-select');
-const selectPage = document.querySelector('#page-select');
-const sectionProducts = document.querySelector('#products');
+// instantiate selectors
+const selectShow = document.querySelector("#show-select");
+const selectPage = document.querySelector("#page-select");
+const selectBrand = document.querySelector("#brand-select");
+const sectionProducts = document.querySelector("#products");
 
-//Filters
-const selectFilterRecentProducts = document.querySelector('#filter-date-select')
-const selectFilterReasonablePrice = document.querySelector('#filter-price-select')
-const selectFilterPriceBetween50_100 = ('#filter-price-between-50-and-100-select')
-const selectFilterPriceAbove100 = ('#filter-price-above-100-select')
-const selectBrand = document.querySelector('#brand-select');
-
-//Sort
-const selectSort = document.querySelector('#sort-select');
 
 //Indicators
-const spanNbProducts = document.querySelector('#nbProducts');
-const spanNbRecentProducts = document.querySelector('#nbNewProducts');
-const spanp50 = document.querySelector('#p50');
-const spanp90 = document.querySelector('#p90');
-const spanp95 = document.querySelector('#p95');
-const spanLastReleased = document.querySelector('#lastReleased');
+const spanNbProducts = document.querySelector("#nbProducts");
+const spanNbNewProducts = document.querySelector("#nbNewProducts");
+const spanNbDispProducts = document.querySelector("#nbDispProducts");
 
-//Favorite products
-const check_if_favorite = document.getElementsByClassName("favorite_products");
-const selectFilterFavorite = document.querySelector('#filter-favorite-select')
+const spanP50 = document.querySelector("#p50");
+const spanP90 = document.querySelector("#p90");
+const spanP95 = document.querySelector("#p95");
+const spanLastReleased = document.querySelector("#lastReleased");
+
+const checkReleased = document.querySelector("#recentlyReleased");
+const checkPrice = document.querySelector("#reasonablePrice");
+
+//Sort
+const selectSort = document.querySelector("#sort-select");
+
+//Favorite product
+const checkFavoriteProducts = document.querySelector("#favoriteProducts");
+const checkFav = document.getElementsByClassName("favProduct");
+
+let favorites = {};
 
 /**
  * Set global value
  * @param {Array} result - products to display
  * @param {Object} meta - pagination meta info
  */
-const setCurrentProducts = ({result, meta}) => {
+const setCurrentProducts = ({ result, meta }) => {
   currentProducts = result;
   currentPagination = meta;
 };
@@ -59,190 +60,359 @@ const fetchProducts = async (page = 1, size = 12) => {
 
     if (body.success !== true) {
       console.error(body);
-      return {currentProducts, currentPagination};
+      return { currentProducts, currentPagination };
     }
 
     return body.data;
   } catch (error) {
     console.error(error);
-    return {currentProducts, currentPagination};
+    return { currentProducts, currentPagination };
   }
 };
 
 /**
- * Render list of products
- * @param  {Array} products
+ * Feature 3 - Filter by recent products
+As a user
+I want to filter by recent products
+So that I can browse the new released products (less than 2 weeks)
  */
- const renderProducts = products => {
-  const fragment = document.createDocumentFragment();
-  const div = document.createElement('div');
-  
+const filterByReleased = (products) => {
+  return products.filter((product) => {
+    const one_day = 24 * 60 * 60 * 1000;
+    const diff = (new Date() - new Date(product.released)) / one_day;
+    if (diff < 15) return product;
+  });
+};
+
+/**
+ * Feature 4 - Filter by reasonable price
+As a user
+I want to filter by reasonable price
+So that I can buy affordable product i.e less than 50 €
+ */
+const filterByPrice = (products) => {
+  return products.filter((product) => {
+    if (product.price <= 50) return product;
+  });
+};
+
+/**
+ * Feature 5 - Sort by price
+As a user
+I want to sort by price
+So that I can easily identify cheapest and expensive products
+AND
+  Feature 6 - Sort by date
+As a user
+I want to sort by price
+So that I can easily identify recent and old products
+ */
+const sortBy = (products) => {
+  switch (selectSort.value) {
+    case "price-asc":
+      products.sort((p1, p2) =>
+        p1.price < p2.price ? -1 : p1.price === p2.price ? 0 : 1
+      );
+      break;
+
+    case "price-desc":
+      products.sort((p1, p2) =>
+        p1.price < p2.price ? 1 : p1.price === p2.price ? 0 : -1
+      );
+      break;
+
+    case "date-asc":
+      products.sort((p1, p2) =>
+        p1.released < p2.released ? 1 : p1.released === p2.released ? 0 : -1
+      );
+      break;
+
+    case "date-desc":
+      products.sort((p1, p2) =>
+        p1.released < p2.released ? -1 : p1.released === p2.released ? 0 : 1
+      );
+      break;
+  }
+};
+
+/**
+  Feature 10 - p50, p90 and p95 price value indicator
+As a user
+I want to indicate the p50, p90 and p95 price value
+So that I can understand the price values of the products
+ */
+const getP = (products, pVal) => {
+  let sortedProducts = products.slice();
+  sortedProducts.sort((p1, p2) =>
+    p1.price < p2.price ? 1 : p1.price === p2.price ? 0 : -1
+  );
+  const n = Math.floor(sortedProducts.length * (pVal / 100));
+  return sortedProducts[n].price;
+};
+
+
+/**
+ * Create a template of a table for displaying the products
+ * @param {Array} products
+ * @returns
+ */
+const createTemplate = (products) => {
   let template = `
   <table>
     <thead>
       <tr>
         <th>Brand</th>
-        <th style="text-align: start;">|</th>
-        <th>Product - link</th>
-        <th style="text-align: start;"></th>
+        <th>Product</th>
         <th>Price</th>
-        <th style="text-align: start;"></th>
         <th>Released</th>
-        <th style="text-align: start;"></th>
-        <th>Favorite products</th>
+        <th>Favorite</th>
       </tr>
   </thead>
   <tbody>`;
-
   template += products
     .map((product) => {
-        if (favorite_products.includes(product.uuid)) 
-        {
-            return `
-                <tr class="product" id=${product.uuid}>
-                <th style="text-align: start;">${product.brand}</th>
-                <th style="text-align: start;">|</th>
-                <th style="text-align: start;"><a href="${product.link}">${product.name}</a></th>
-                <th style="text-align: start;">|</th>
-                <th style="text-align: start;">${product.price}€</th>
-                <th style="text-align: start;">|</th>
-                <th style="text-align: start;">${product.released}</th>
-                <th style="text-align: start;">|</th>
-                <th>
-                <button style = "display:inline-block;
-                padding:0.3em 1.2em;
-                margin:0.5em 0.3em 0.3em 0;
-                font-weight:300;
-                font-size : 15px;
-                color: white;
-                background-color:#008CBA;
-                text-align:center;
-                transition: all 0.2s;"
-                onclick= RemoveFavorite('${product.uuid}')>Remove</button>
-            </th>
-                </tr>
-                `;
-        }
-        else 
-        {
-            return `
-            <tr class="product" id=${product.uuid}>
-            <th style="text-align: start;">${product.brand}</th>
-            <th style="text-align: start;">|</th>
-            <th style="text-align: start;"><a href="${product.link}">${product.name}</a></th>
-            <th style="text-align: start;">|</th>
-            <th style="text-align: start;">${product.price}€</th>
-            <th style="text-align: start;">|</th>
-            <th style="text-align: start;">${product.released}</th>
-            <th style="text-align: start;">|</th>
-            <th>
-                <button style = "display:inline-block;
-                padding:0.3em 1.2em;
-                margin:0.5em 0.3em 0.3em 0;
-                font-weight:300;
-                font-size: 15px;
-                color: white;
-                background-color:#008CBA;
-                text-align:center;
-                transition: all 0.2s;"
-                onclick= AddFavorite('${product.uuid}')>Add</button>
-            </th>
-            </tr>
-            `;
-        }
+      return `
+    <tr class="product" id=${product.uuid}>
+      <th>${product.brand}</th>
+      <th><a href="${product.link}">${product.name}</a></th>
+      <th>${product.price}€</th>
+      <th>${product.released}</th>
+      <th><input class="favProduct" type="checkbox"></input></th>
+    </tr>
+  `;
     })
     .join("");
   template += "</tbody></table>";
 
-  div.innerHTML = template;
-  fragment.appendChild(div);
-  sectionProducts.innerHTML = '<h2>Products</h2>';
-  sectionProducts.appendChild(fragment);
+  return template;
 };
 
+/**
+ * Get the date of the last released displayed product
+ * @param {Array} products
+ * @returns Date of the last released displayed product
+ */
+const getLastReleased = (products) => {
+  let sortedProducts = products.slice();
+  sortedProducts.sort((p1, p2) =>
+    p1.released < p2.released ? 1 : p1.released === p2.released ? 0 : -1
+  );
+  return sortedProducts[0].released;
+};
+
+/**
+  Feature 13 - Save as favorite
+As a user
+I want to save a product as favorite
+So that I can retreive this product later
+ */
+const manageFavorite = (products) => {
+  [...checkFav].forEach((chk) => {
+    chk.addEventListener("change", (event) => {
+      const id = chk.parentElement.parentElement.id;
+      const product = products.find((product) => product.uuid === id);
+      product.favorite = chk.checked;
+      if (product.favorite) favorites[id] = product;
+      else delete favorites[id];
+      refresh();
+    });
+  });
+
+  if (products) {
+    products.forEach((product) => {
+      const isFav = favorites[product.uuid];
+      if (isFav) {
+        [...checkFav].find(
+          (chk) => chk.parentElement.parentElement.id === product.uuid
+        ).checked = true;
+      }
+    });
+  }
+};
+
+
+/**
+ * Render list of products
+ * @param  {Array} products
+ */
+const renderProducts = (products) => {
+  let toDisplay = checkFavoriteProducts.checked
+    ? Object.values(favorites)
+    : products;
+  toDisplay =
+    currentBrand == "all" ? toDisplay : byBrands(toDisplay)[currentBrand];
+
+  const fragment = document.createDocumentFragment();
+  const div = document.createElement("div");
+
+  spanNbNewProducts.innerHTML = 0;
+  let template;
+
+  if (toDisplay && toDisplay.length > 0) {
+    //if we choose a loom in page 1 that doesn't exist in page 2,
+    //it can create problems, so we check toDisplay isn't empty
+
+    //filtering
+    const newProducts = filterByReleased(toDisplay);
+    if (checkReleased.checked) toDisplay = newProducts;
+    if (checkPrice.checked) toDisplay = filterByPrice(toDisplay);
+
+    //sorting
+    sortBy(toDisplay);
+
+    //get the p50,p90,p95 values
+    spanNbNewProducts.innerHTML = newProducts.length;
+    spanP50.innerHTML = getP(toDisplay, 50) + "€";
+    spanP90.innerHTML = getP(toDisplay, 90) + "€";
+    spanP95.innerHTML = getP(toDisplay, 95) + "€";
+
+    //Display date of the last released product in the displayed list
+    spanLastReleased.innerHTML = getLastReleased(toDisplay);
+
+    template = createTemplate(toDisplay);
+  } else {
+    template = `<p>No ${currentBrand} products in that page.</p>`;
+    currentBrand = "all";
+  }
+
+  div.innerHTML = template;
+  fragment.appendChild(div);
+  sectionProducts.innerHTML = "<h2>Products</h2>";
+  sectionProducts.appendChild(fragment);
+
+  manageFavorite(toDisplay);
+
+  spanNbDispProducts.innerHTML = toDisplay ? toDisplay.length : 0;
+};
 
 /**
  * Render page selector
  * @param  {Object} pagination
  */
-const renderPagination = pagination => {
-  const {currentPage, pageCount} = pagination;
+const renderPagination = (pagination) => {
+  const { currentPage, pageCount } = pagination;
   const options = Array.from(
-    {'length': pageCount},
+    { length: pageCount },
     (value, index) => `<option value="${index + 1}">${index + 1}</option>`
-  ).join('');
+  ).join("");
 
   selectPage.innerHTML = options;
   selectPage.selectedIndex = currentPage - 1;
 };
 
+/**
+ * Render brand selector
+ * @param {Object} brand
+ */
+const renderBrand = (brands) => {
+  let options = '<option value = "all">All brands</option>\n';
+  Object.keys(brands).forEach((brand) => {
+    options += `<option value = "${brand}">${brand}</option>\n`;
+  });
+
+  selectBrand.innerHTML = options;
+  if (currentBrand == "all") selectBrand.selectedIndex = 0;
+  else
+    selectBrand.selectedIndex = Object.keys(brands).indexOf(currentBrand) + 1;
+};
 
 /**
- * Render page indicators
+ * Render page selector
  * @param  {Object} pagination
  */
-const renderIndicators = pagination => {
-  const {count} = pagination;
-
+const renderIndicators = (pagination) => {
+  const { count } = pagination;
   spanNbProducts.innerHTML = count;
-  spanNbRecentProducts.innerHTML = CountRecentProducts();
-  spanp50.innerHTML = Price_value(50) + " €";
-  spanp90.innerHTML = Price_value(90) + " €";
-  spanp95.innerHTML = Price_value(95) + " €";
-  spanLastReleased.innerHTML = LastReleased();
 };
 
 const render = (products, pagination) => {
   renderProducts(products);
   renderPagination(pagination);
   renderIndicators(pagination);
+  renderBrand(byBrands(products));
 };
 
+/**
+ * Get the products by brand
+ * @param {Object} products
+ * @returns Object
+ */
+const byBrands = (products) => {
+  let brands = {};
+  if (!products) return {};
+  products.forEach((article) => {
+    if (!brands[article.brand]) {
+      brands[article.brand] = [];
+    }
 
-//Render page brands
-const renderBrands = products => {
-  let brands = [... new Set(products.flatMap(x => x.brand))];
+    let props = {};
+    Object.keys(article)
+      .slice(1)
+      .forEach((prop) => (props[prop] = article[prop]));
 
-  selectBrand[0] = new Option("All");
-  var i = 1;
-  for (var b of brands) 
-  {
-      selectBrand[i] = new Option(b);
-      i += 1;
-  }
+    brands[article.brand].push(props);
+  });
+  return brands;
 };
-
-
 
 /**
  * Declaration of all Listeners
  */
 
-/*
-Feature 1 - Browse pages
-As a user
-I want to browse available pages
-So that I can load more products
-*/
-selectPage.addEventListener('change', event => {
-  fetchProducts(parseInt(event.target.value), currentPagination.pageSize)
-      .then(setCurrentProducts) 
-      .then(() => render(currentProducts, currentPagination));
-});
+/**
+ * Refresh after a new selection
+ */
+const refresh = () => {
+  fetchProducts(currentPagination.currentPage, currentPagination.pageSize)
+    .then(setCurrentProducts)
+    .then(() => render(currentProducts, currentPagination));
+};
+
+document.addEventListener("DOMContentLoaded", () =>
+  fetchProducts()
+    .then(setCurrentProducts)
+    .then(() => render(currentProducts, currentPagination))
+);
 
 /**
  * Select the number of products to display
+ * @type {[type]}
  */
-selectShow.addEventListener('change', async (event) => {
-  const products = await fetchProducts(currentPagination.currentPage, parseInt(event.target.value));
-
-  setCurrentProducts(products);
-  render(currentProducts, currentPagination);
+selectShow.addEventListener("change", (event) => {
+  currentPagination.currentPage = 1;
+  currentPagination.pageSize = parseInt(event.target.value);
+  refresh();
 });
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const products = await fetchProducts();
-
-  setCurrentProducts(products);
-  render(currentProducts, currentPagination);
+/**
+ * Select page to display
+ */
+selectPage.addEventListener("change", (event) => {
+  currentPagination.currentPage = parseInt(event.target.value);
+  refresh();
 });
+
+/**
+ * Select brand to display products
+ */
+selectBrand.addEventListener("change", (event) => {
+  currentBrand = event.target.value;
+  refresh();
+});
+
+/**
+ * Filter by new released
+ */
+checkReleased.addEventListener("change", refresh);
+
+/**
+ * Filter by reasonable price
+ */
+checkPrice.addEventListener("change", refresh);
+
+selectSort.addEventListener("change", refresh);
+
+/**
+ * Filter by favorite
+ */
+checkFavoriteProducts.addEventListener("change", refresh);
