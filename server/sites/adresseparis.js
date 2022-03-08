@@ -8,25 +8,16 @@ const { v5: uuidv5 } = require("uuid");
  * @return {Object} restaurant
  */
 const parse = (data) => {
-  const $ = cheerio.load(data, { xmlMode: true });
+  const $ = cheerio.load(data);
 
-  return $(".product-grid__item")
+  return $(".right-block")
     .map((i, element) => {
-      const link = `https://www.loom.fr${$(element)
-        .find(".product-title a")
-        .attr("href")}`;
-
       return {
-        link,
-        brand: "loom",
-        price: parseInt($(element).find(".money").text()),
-        name: $(element)
-          .find(".product-title")
-          .text()
-          .trim()
-          .replace(/\s/g, " "),
-        photo: $(element).find("noscript img.product_card__image").attr("src"),
-        _id: uuidv5(link, uuidv5.URL),
+        link: $(element).find(".product-name").attr("href"),
+        brand: "adresse paris",
+        price: parseFloat($(element).find(".price").text()),
+        name: $(element).find(".product-name").attr("title"),
+        photo: $(element).parent().find(".product_img_link").attr("href"),
       };
     })
     .get();
@@ -40,10 +31,8 @@ const parse = (data) => {
 module.exports.scrape = async (url) => {
   try {
     const response = await fetch(url);
-
     if (response.ok) {
       const body = await response.text();
-
       return parse(body);
     }
 

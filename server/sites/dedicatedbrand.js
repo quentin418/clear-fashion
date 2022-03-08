@@ -18,21 +18,15 @@ const parse = data => {
 
       return {
         link,
-        'brand': 'dedicated',
-        'price': parseInt(
-          $(element)
-            .find('.productList-price')
-            .text()
-        ),
-        'name': $(element)
-          .find('.productList-title')
+        brand: "dedicated",
+        price: parseFloat($(element).find(".productList-price").text()),
+        name: $(element)
+          .find(".productList-title")
           .text()
           .trim()
-          .replace(/\s/g, ' '),
-        'photo': $(element)
-          .find('.productList-image img')
-          .attr('src'),
-        '_id': uuidv5(link, uuidv5.URL)
+          .replace(/\s/g, " "),
+        photo: $(element).find(".productList-image img").attr("data-src"), //[0].attribs["data-src"],
+        _id: uuidv5(link, uuidv5.URL),
       };
     })
     .get();
