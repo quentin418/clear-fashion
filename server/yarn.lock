@@ -1119,6 +1119,11 @@
   "resolved" "https://registry.npmjs.org/safer-buffer/-/safer-buffer-2.1.2.tgz"
   "version" "2.1.2"
 
+"sandbox.js@^2.0.2":
+  "integrity" "sha1-xJVjpv5+a3WrCfp3ofaARXHQPHI="
+  "resolved" "https://registry.npmjs.org/sandbox.js/-/sandbox.js-2.0.2.tgz"
+  "version" "2.0.2"
+
 "saslprep@^1.0.3":
   "integrity" "sha512-/MY/PEMbk2SuY5sScONwhUDsV2p77Znkb/q3nSVstq/yQzYJOH/Azh29p9oJLsl3LnQwSvZDKagDGBsBwSooag=="
   "resolved" "https://registry.npmjs.org/saslprep/-/saslprep-1.0.3.tgz"
@@ -1445,3 +1450,8 @@
   "integrity" "sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A=="
   "resolved" "https://registry.npmjs.org/yallist/-/yallist-4.0.0.tgz"
   "version" "4.0.0"
+
+"yarn@^1.22.17":
+  "integrity" "sha512-oFffv6Jp2+BTUBItzx1Z0dpikTX+raRdqupfqzeMKnoh7WD6RuPAxcqDkMUy9vafJkrB0YaV708znpuMhEBKGQ=="
+  "resolved" "https://registry.npmjs.org/yarn/-/yarn-1.22.18.tgz"
+  "version" "1.22.18"

@@ -1,114 +1,86 @@
-require('dotenv').config();
-const {MongoClient} = require('mongodb');
-const fs = require('fs');
+const { closest } = require("cheerio/lib/api/traversing");
+const fs = require("fs");
+let products = [];
 
-const MONGODB_DB_NAME = 'clearfashion';
-const MONGODB_COLLECTION = 'products';
-const MONGODB_URI = "mongodb+srv://quentinpelet:Quentin5!@cluster0.zjkan.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
+const { MongoClient } = require("mongodb");
+const MONGODB_URI =
+  "mongodb+srv://read_user:read_user@clearfashion.4nii2.mongodb.net?retryWrites=true&w=majority";
+const MONGODB_DB_NAME = "clearfashion";
+let client;
+let db;
+let collectionProducts;
 
-let client = null;
-let database = null;
+const connect = (module.exports.connect = async () => {
+  if (db) console.log("Already connected");
+  else {
+    client = await MongoClient.connect(MONGODB_URI, {
+      useNewUrlParser: true,
+    });
+    db = await client.db(MONGODB_DB_NAME);
+    collectionProducts = await db.collection("products");
+    console.log("Connection success");
+  }
+});
 
-/**
- * Get db connection
- * @type {MongoClient}
- */
-const getDB = module.exports.getDB = async () => {
+const insert = (module.exports.insert = async (products) => {
   try {
-    if (database) {
-      console.log('💽  Already Connected');
-      return database;
-    }
-
-    client = await MongoClient.connect(MONGODB_URI, {'useNewUrlParser': true});
-    database = client.db(MONGODB_DB_NAME);
-
-    console.log('💽  Connected');
-
-    return database;
+    //shuffle
+    products.sort(() => 0.5 - Math.random());
+    await connect();
+    const results = await collectionProducts.insertMany(products, {
+      ordered: false,
+    });
+    console.log("Everything was insered");
+    return results;
   } catch (error) {
-    console.error('🚨 MongoClient.connect...', error);
+    console.log(error);
     return null;
   }
-};
+});
 
-/**
- * Insert list of products
- * @param  {Array}  products
- * @return {Object}
- */
-module.exports.insert = async products => {
+const close = (module.exports.close = async () => {
+  await client.close();
+  console.log("Connection closed");
+});
+
+const find = (module.exports.find = async (
+  query = {},
+  projection = {},
+  sort = {},
+  limit = 0
+) => {
   try {
-    const db = await getDB();
-    const collection = db.collection(MONGODB_COLLECTION);
-    // More details
-    // https://docs.mongodb.com/manual/reference/method/db.collection.insertMany/#insert-several-document-specifying-an-id-field
-    const result = await collection.insertMany(products, {'ordered': false});
-
+    await connect();
+    const result = await collectionProducts
+      .find(query)
+      .project(projection)
+      .sort(sort)
+      .limit(limit)
+      .toArray();
     return result;
   } catch (error) {
-    console.error('🚨 collection.insertMany...', error);
-    fs.writeFileSync('products.json', JSON.stringify(products));
-    return {
-      'insertedCount': error.result.nInserted
-    };
+    console.log(error);
   }
-};
+});
 
-/**
- * Find products based on query
- * @param  {Array}  query
- * @return {Array}
- */
-module.exports.find = async query => {
+const findDistinct = (module.exports.findDistinct = async (col) => {
   try {
-    const db = await getDB();
-    const collection = db.collection(MONGODB_COLLECTION);
-    const result = await collection.find(query).toArray();
-
+    await connect();
+    const result = await collectionProducts.distinct(col);
+    // await close();
     return result;
   } catch (error) {
-    console.error('🚨 collection.find...', error);
-    return null;
+    console.log(error);
   }
-};
+});
 
-module.exports.sort = async (find_query, sort_query) => {
-  try {
-    const db = await getDB();
-    const collection = db.collection(MONGODB_COLLECTION);
-    const result = await collection.find(find_query).sort(sort_query).toArray();
+const deleteProducts = () =>
+  connect()
+    .then(() => collectionProducts.deleteMany())
+    .then(close);
 
-    return result;
-  } catch (error) {
-    console.error('🚨 collection.find...', error);
-    return null;
-  }
-};
-
-
-
-module.exports.limit = async (find_query, limit_query) => {
-  try {
-    const db = await getDB();
-    const collection = db.collection(MONGODB_COLLECTION);
-    const result = await collection.find(find_query).sort(limit_query).toArray();
-
-    return result;
-  } catch (error) {
-    console.error('🚨 collection.find...', error);
-    return null;
-  }
-};
-
-
-/**
- * Close the connection
- */
-module.exports.close = async () => {
-  try {
-    await client.close();
-  } catch (error) {
-    console.error('🚨 MongoClient.close...', error);
-  }
+const test = async () => {
+  const p = await findDistinct("brand");
+  await console.log(p);
+  await close();
 };
