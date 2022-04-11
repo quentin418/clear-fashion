@@ -7,6 +7,7 @@
   </head>
   <body>
     <h1>Clear fashion</h1>
+    <h2>Select parameters</h2>
     <section id="options">
       <div id="show">
         <label for="show-select">Show:</label>
@@ -21,20 +22,36 @@
         <select name="page" id="page-select"> </select>
       </div>
       <div id="filters">
-        <input type="checkbox" id="reasonablePrice">
-        <label for="reasonablePrice">By reasonable price</label>
-        <input type="checkbox" id="recentlyReleased">
-        <label for="recentlyReleased">By recently released</label>
-        <input type="checkbox" id="favoriteProducts">
-        <label for="favoriteProducts">By favorite</label>
+        <div id="reasonable">
+          <label for='reasonable-select'>Reasonable price :</label>
+          <select name="reasonable" id="reasonable-select">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
+        <div id="recent">
+          <label for='recent-select'>Recent products :</label>
+          <select name="recent" id="recent-select">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
+        <div id="favorite">
+          <label for='favorite-select'>Favorite products :</label>
+          <select name="favorite" id="favorite-select">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
         <div id="brand">
-          <label for="brand-select">By brands:</label>
+          <label for="brand-select">By brands :</label>
           <select name="brand" id="brand-select"> </select>
         </div>
       </div>
       <div id="sort">
         <label for="sort-select">Sort:</label>
         <select name="sort" id="sort-select">
+          <option value="notSorted">-</option>
           <option value="price-asc">Cheaper</option>
           <option value="price-desc">Expensive</option>
           <option value="date-asc">Recently released</option>
@@ -43,7 +60,7 @@
       </div>
     </section>
     <section id="indicators">
-      <h2>Indicators :</h2>
+      <h2>Indicators</h2>
       <div>
         <span>Number of products</span>
         <span id="nbProducts">0</span>
