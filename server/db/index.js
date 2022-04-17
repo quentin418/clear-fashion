@@ -85,12 +85,10 @@ const test = async () => {
   await close();
 };
 
-module.exports.limit = async (find_query, limit_query) => {
+module.exports.aggregate = async query => {
   try {
     const db = await connect();
-    const collection = db.collection(MONGODB_COLLECTION);
-    console.log(collection)
-    const result = await collection.find(find_query).sort(limit_query).toArray();
+    const result = await collectionProducts.aggregate(query).toArray();
 
     return result;
   } catch (error) {
