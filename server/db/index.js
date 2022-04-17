@@ -3,8 +3,7 @@ const fs = require("fs");
 let products = [];
 
 const { MongoClient } = require("mongodb");
-const MONGODB_URI =
-  "mongodb+srv://read_user:read_user@clearfashion.4nii2.mongodb.net?retryWrites=true&w=majority";
+const MONGODB_URI = "mongodb+srv://quentinpelet:Quentin5!@cluster0.zjkan.mongodb.net/myFirstDatabase?retryWrites=true&w=majority";
 const MONGODB_DB_NAME = "clearfashion";
 let client;
 let db;
@@ -18,6 +17,7 @@ const connect = (module.exports.connect = async () => {
     });
     db = await client.db(MONGODB_DB_NAME);
     collectionProducts = await db.collection("products");
+    console.log(collectionProducts)
     console.log("Connection success");
   }
 });
@@ -83,4 +83,18 @@ const test = async () => {
   const p = await findDistinct("brand");
   await console.log(p);
   await close();
+};
+
+module.exports.limit = async (find_query, limit_query) => {
+  try {
+    const db = await connect();
+    const collection = db.collection(MONGODB_COLLECTION);
+    console.log(collection)
+    const result = await collection.find(find_query).sort(limit_query).toArray();
+
+    return result;
+  } catch (error) {
+    console.error('🚨 collection.find...', error);
+    return null;
+  }
 };
